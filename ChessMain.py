@@ -20,14 +20,11 @@ def main():
     start = True
     running = False
     while start:
-        for e in p.event.get():
-            if e.type == p.QUIT:
-                running = False
         if not running:
             drawMenuState(screen)
             for e in p.event.get():
                 if e.type == p.QUIT:
-                    running = False
+                    start = False
                 elif e.type == p.MOUSEBUTTONDOWN:
                     # LEFT CLICK
                     if e.button == 1:

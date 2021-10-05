@@ -488,7 +488,6 @@ class GameState:
 
     def pawnPromotion(self):
         promotionDone = False
-        char = 'Q'
         self.promoteTime = 'Choose piece promotion to:'
         while not promotionDone:
             for e in p.event.get():
