@@ -25,7 +25,8 @@ class GameState:
         self.currentCastlingRight = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
                                              self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)]
-
+        self.gameOver = False
+        self.promoteTime = ''
         # NAIVE ALGORITHM
         # self.checkMate = False
         # self.staleMate = False
@@ -125,36 +126,10 @@ class GameState:
     '''
 
     def getValidMoves(self):
-        # ## NAIVE ALGORITHM
-        # # 1. Generate all possible moves
-        # moves = self.getAllPossibleMoves()
-        # # 2. For each move, make move
-        # for i in range(len(moves)-1, -1, -1):
-        #     self.makeMove(moves[i])
-        #     # 3. Generate all opponent's moves
-        #     # oppMoves = self.getAllPossibleMoves()
-        # # 4. For each opponent's moves, see if they attack your king
-        #     self.whiteToMove = not self.whiteToMove
-        #     # 5. If they do attack your king, not valid move
-        #     if self.inCheck():
-        #         moves.remove(moves[i])
-        #     self.whiteToMove = not self.whiteToMove
-        #     self.undoMove()
-        # if len(moves) == 0:
-        #     if self.inCheck():
-        #         self.checkMate = True
-        #     else:
-        #         self.staleMate = True
-        # else:
-        #     self.checkMate = False
-        #     self.staleMate = False
-        # return moves
-
-        ### ADVANCED ALGORITHM
         moves = []
         tempEnPassantPossible = self.enPassantPossible
         tempCastleRights = CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
-                                       self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)
+                                        self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)
         self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.whiteToMove:
             kingRow = self.whiteKingLocation[0]
@@ -512,25 +487,21 @@ class GameState:
         return inCheck, pins, checks
 
     def pawnPromotion(self):
-        done = False
+        promotionDone = False
         char = 'Q'
-        while not done:
+        self.promoteTime = 'Choose piece promotion to:'
+        while not promotionDone:
             for e in p.event.get():
                 if e.type == p.KEYDOWN:
                     if e.key == p.K_q:
                         char = 'Q'
-                        done = True
                     elif e.key == p.K_r:
                         char = 'R'
-                        done = True
                     elif e.key == p.K_b:
                         char = 'B'
-                        done = True
                     elif e.key == p.K_n:
                         char = 'N'
-                        done = True
-                    else:
-                        done = True
+                    promotionDone = True
         return char
 
 
