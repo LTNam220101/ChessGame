@@ -1,6 +1,7 @@
 import pygame as p
 import ChessEngine
 import time
+import AI
 
 TIME = 48
 BORDER = 32
@@ -43,13 +44,16 @@ def main():
             loadImages()
             sqSelected = ()  # tuple (row, col)
             playerClicks = []  # keep track of player clicks (2 tuples: [(6, 4), (4, 4)] ex
+            playerOne = True
+            playerTwo = False
             global remain_time
             while running:
+                humanTurn = (gameState.whiteToMove and playerOne) or (not gameState.whiteToMove and playerTwo)
                 for e in p.event.get():
                     if e.type == p.QUIT:
                         running = False
-                    elif e.type == p.MOUSEBUTTONDOWN:
-                        if not gameOver:
+                    if e.type == p.MOUSEBUTTONDOWN:
+                        if not gameOver and humanTurn:
                             # LEFT CLICK
                             if e.button == 1:
                                 location = p.mouse.get_pos()  # (x, y) location of mouse
@@ -84,20 +88,32 @@ def main():
                                 gameState.undoMove()
                                 moveMade = True
                                 animation = False
+                                gameOver = False
+                # AI move
+                if not gameOver and not humanTurn:
+                    # move = AI.findRandomMove(validMoves)
+                    move = AI.findBestMoveMinMax(gameState, validMoves)
+                    if move is None:
+                        move = AI.findRandomMove(validMoves)
+                    gameState.makeMove(move)
+                    moveMade = True
+                    animation = False
+
                 if moveMade:
                     if animation:
                         animationMove(gameState.moveLog[-1], screen, gameState.board, clock)
                     validMoves = gameState.getValidMoves()
-                    if len(validMoves) == 0:
-                        gameOver = True
                     moveMade = False
 
                 drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
-                if gameOver:
+
+                if gameState.checkmate:
+                    gameOver = True
                     gameOverText(screen, gameState.whiteToMove)
-                else:
-                    remain_time = TIME_LIMIT - int(time.time() - start_time)
-                    gameOver = drawTime(screen, gameState.whiteToMove, gameOver)
+                elif gameState.stalemate:
+                    gameOver = True
+                remain_time = TIME_LIMIT - int(time.time() - start_time)
+                gameOver = drawTime(screen, gameState.whiteToMove, gameOver)
                 clock.tick(MAX_FPS)
                 p.display.flip()
 
@@ -125,6 +141,7 @@ def drawGameState(screen, gameState, validMoves, sqSelected):
     highlightPieces(screen, gameState, sqSelected)
     drawPieces(screen, gameState.board)
     highlightMoves(screen, gameState, validMoves, sqSelected)
+    drawMoveLog(screen, gameState)
 
 
 def drawBroad(screen):
@@ -229,6 +246,30 @@ def gameOverText(screen, whiteToMove):
     textLocation = p.Rect(SQ_SIZE * 4 + BORDER - textObj.get_width() / 2, SQ_SIZE * 4 + BORDER +TIME - textObj.get_height() / 2, 60, 60)
     screen.blit(textObj, textLocation)
 
+def drawMoveLog(screen, gs):
+    font = p.font.Font('freesansbold.ttf', 16)
+    moveLogRect = p.Rect(BORDER * 2 + 640, 0, 250, 512)
+    p.draw.rect(screen, p.Color('Black'), moveLogRect)
+    moveLog = gs.moveLog
+    moveTexts = []
+    for i in range(0, len(moveLog), 2):
+        moveString = str(i//2+1) + "." + moveLog[i].getChessNotation() + ""
+        if i+1 < len(moveLog):
+            moveString += moveLog[i+1].getChessNotation()
+        moveTexts.append(moveString)
+    movesPerRow = 2
+    padding = 5
+    lineSpacing = 2
+    textY = padding
+    for i in range(0, len(moveTexts), movesPerRow):
+        text = ''
+        for j in range(movesPerRow):
+            if i+j < len(moveTexts):
+                text += moveTexts[i+j]
+        textObj = font.render(text, True, p.Color('white'))
+        textLocation = moveLogRect.move(padding, textY)
+        screen.blit(textObj, textLocation)
+        textY += textObj.get_height() + lineSpacing
 
 if __name__ == "__main__":
     main()

@@ -27,9 +27,8 @@ class GameState:
                                              self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)]
         self.gameOver = False
         self.promoteTime = ''
-        # NAIVE ALGORITHM
-        # self.checkMate = False
-        # self.staleMate = False
+        self.checkmate = False
+        self.stalemate = False
 
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = '--'
@@ -100,6 +99,8 @@ class GameState:
                 else:  # queen side
                     self.board[move.endRow][move.endCol - 2] = self.board[move.endRow][move.endCol + 1]
                     self.board[move.endRow][move.endCol + 1] = '--'
+            self.checkmate = False
+            self.stalemate = False
 
     def updateCastleRight(self, move):
         if move.pieceMoved == 'wK':
@@ -167,6 +168,11 @@ class GameState:
                 self.getKnightMoves(kingRow, kingCol, moves)
         else:  # not in check so all moves are fine
             moves = self.getAllPossibleMoves()
+        if len(moves) == 0:
+            if self.inCheck:
+                self.checkmate = True
+            else:
+                self.stalemate = True
         if self.whiteToMove:
             self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
         else:
