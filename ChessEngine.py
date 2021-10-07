@@ -494,6 +494,7 @@ class GameState:
 
     def pawnPromotion(self):
         promotionDone = False
+        char = 'Q'
         self.promoteTime = 'Choose piece promotion to:'
         while not promotionDone:
             for e in p.event.get():
@@ -527,6 +528,12 @@ class Move:
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3,
                    "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
+    UNICODE_PIECES = {
+      'bR': '♜', 'bN': '♞', 'bB': '♝', 'bQ': '♛',
+      'bK': '♚', 'bp': '♟', 'wR': '♖', 'wN': '♘',
+      'wB': '♗', 'wQ': '♕', 'wK': '♔', 'wp': '♙',
+      '--': ''
+    }
 
     def __init__(self, startSq, endSq, board, isEnPassantMove=False, isCastleMove=False):
         self.startRow = startSq[0]
@@ -550,7 +557,7 @@ class Move:
         return False
 
     def getChessNotation(self):
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
+        return self.UNICODE_PIECES[self.pieceMoved] + self.getRankFile(self.endRow, self.endCol)
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]
