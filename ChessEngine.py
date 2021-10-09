@@ -1,6 +1,5 @@
 import pygame as p
 
-
 class GameState:
     def __init__(self):
         self.board = [
@@ -14,21 +13,22 @@ class GameState:
             ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                               'B': self.getBishopMoves, 'K': self.getKingMoves, 'Q': self.getQueenMoves}
-        self.whiteToMove = True
-        self.moveLog = []
+        self.whiteToMove = True     # White turn or not
+        self.moveLog = []           
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
-        self.inCheck = False
+        self.inCheck = False        
         self.pins = []
         self.checks = []
+        self.promotionDone = True
         self.enPassantPossible = ()  # coordinates for the square where en passant capture is possible
+        self.enPassantPossibleLog = [self.enPassantPossible]  
         self.currentCastlingRight = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
                                              self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)]
-        self.gameOver = False
-        self.promoteTime = ''
         self.checkmate = False
         self.stalemate = False
+
 
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = '--'
@@ -42,20 +42,20 @@ class GameState:
             self.blackKingLocation = (move.endRow, move.endCol)
         # Pawn promotion
         elif move.pieceMoved == 'wp' and move.endRow == 0:
-            char = self.pawnPromotion()
-            self.board[move.endRow][move.endCol] = 'w' + char
+            self.eR, self.eC, self.sR, self.sC = move.endRow, move.endCol, move.startRow, move.startCol 
+            self.promotionDone = False
         elif move.pieceMoved == 'bp' and move.endRow == 7:
-            char = self.pawnPromotion()
-            self.board[move.endRow][move.endCol] = 'b' + char
-        # En Passant move
-        if move.isEnPassantMove:
-            self.board[move.startRow][move.endCol] = '--'
+            self.eR, self.eC, self.sR, self.sC = move.endRow, move.endCol, move.startRow, move.startCol 
+            self.promotionDone = False
         # update en passant possible
         if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
             # print((move.startRow + move.endRow) // 2, move.startCol)
             self.enPassantPossible = ((move.startRow + move.endRow) // 2, move.startCol)
         else:
             self.enPassantPossible = ()
+        # En Passant move
+        if move.isEnPassantMove:
+            self.board[move.startRow][move.endCol] = '--'
         # caslte move
         if move.isCastleMove:
             if move.endCol - move.startCol == 2:  # king side
@@ -64,6 +64,8 @@ class GameState:
             else:  # queen side
                 self.board[move.endRow][move.endCol + 1] = self.board[move.endRow][move.endCol - 2]  # move rook
                 self.board[move.endRow][move.endCol - 2] = '--'  # erase old rook
+
+        self.enPassantPossibleLog.append(self.enPassantPossible)
 
         # update castling rights when a rook/ a king move
         self.updateCastleRight(move)
@@ -85,9 +87,8 @@ class GameState:
             if move.isEnPassantMove:
                 self.board[move.endRow][move.endCol] = '--'  # leave landing square blank
                 self.board[move.startRow][move.endCol] = move.pieceCaptured
-                self.enPassantPossible = (move.endRow, move.endCol)
-            if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
-                self.enPassantPossible = ()
+            self.enPassantPossibleLog.pop()
+            self.enPassantPossible = self.enPassantPossibleLog[-1]
             # undo castling rights
             self.castleRightsLog.pop()  # get rid of the new satle rights from the move we undo
             self.currentCastlingRight = self.castleRightsLog[-1]  # set the current CR to the last one in list
@@ -196,7 +197,6 @@ class GameState:
     '''
 
     def squareUnderAttack(self, r, c):
-        print(123)
         self.whiteToMove = not self.whiteToMove
         oppMoves = self.getAllPossibleMoves()
         self.whiteToMove = not self.whiteToMove
@@ -390,10 +390,17 @@ class GameState:
                 if endPiece[0] != allyColor:  # Not an ally piece
                     # place king in end square and check for checks
                     if allyColor == 'w':
+                        row, col = self.whiteKingLocation[0], self.whiteKingLocation[1]
                         self.whiteKingLocation = (endRow, endCol)
                     else:
+                        row, col = self.blackKingLocation[0], self.blackKingLocation[1]
                         self.blackKingLocation = (endRow, endCol)
+                    self.board[row][col] = '--'
                     inChecks, pins, checks = self.checkForPinsAndChecks()
+                    if allyColor == 'w':
+                        self.board[row][col] = 'wK'
+                    else:
+                        self.board[row][col] = 'bK'
                     if not inChecks:
                         moves.append(Move((r, c), (endRow, endCol), self.board))
                     # place king back on original location
@@ -403,6 +410,12 @@ class GameState:
                         self.blackKingLocation = (r, c)
         # self.getCastleMoves(r, c, moves, allyColor)
 
+
+    def pawnPromotion(self, char):
+        self.board[self.eR][self.eC] = 'w'+char if self.whiteToMove else 'b'+char
+        self.board[self.sR][self.sC] = '--'
+        self.promotionDone = True
+        self.whiteToMove = not self.whiteToMove
     '''
     Generate all valid castle moves for the king at (r, c) and add them to the list of moves
     '''
@@ -493,24 +506,6 @@ class GameState:
                     checks.append((endRow, endCol, m[0], m[1]))
         return inCheck, pins, checks
 
-    def pawnPromotion(self):
-        promotionDone = False
-        char = 'Q'
-        self.promoteTime = 'Choose piece promotion to:'
-        while not promotionDone:
-            for e in p.event.get():
-                if e.type == p.KEYDOWN:
-                    if e.key == p.K_q:
-                        char = 'Q'
-                    elif e.key == p.K_r:
-                        char = 'R'
-                    elif e.key == p.K_b:
-                        char = 'B'
-                    elif e.key == p.K_n:
-                        char = 'N'
-                    promotionDone = True
-        return char
-
 
 class CastleRights:
     def __init__(self, wks, bks, wqs, bqs):
@@ -562,3 +557,4 @@ class Move:
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]
+

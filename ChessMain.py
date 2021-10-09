@@ -14,7 +14,6 @@ DIMENSION = 8
 SQ_SIZE = (HEIGHT - 2 * BORDER - 2 * TIME) // DIMENSION
 MAX_FPS = 15
 IMAGES = {}
-TIME_LIMIT = remain_time = 600
 
 
 def main():
@@ -53,7 +52,6 @@ def main():
         p.display.flip()
     
     loadImages()        # Load images of pieces, board
-    start_time = time.time()    
     clock = p.time.Clock()
     gameState = ChessEngine.GameState()
     validMoves = gameState.getValidMoves()  # Get all the valid move
@@ -61,9 +59,12 @@ def main():
     gameOver = False
     sqSelected = ()  # Square player selected (tuple)
     playerClicks = []  # keep track of player clicks (2 tuples: [(6, 4), (4, 4)]
-    global remain_time
+    p1Time = p2Time = 1800
+    motlan = True
+
 
     while isPlaying:
+        start_time = time.time()    
         background = p.transform.scale(p.image.load("chessv2/menu.png"), (WIDTH, HEIGHT))
         screen.blit(background, (0, 0))
         # If player 1 turn and white turn or player 2 turn and black turn
@@ -89,6 +90,7 @@ def main():
                             gameOver = False
                             playerOne = True
                             playerTwo = False
+                            p1Time = p2Time = 1800
                             humanTurn = (gameState.whiteToMove and playerOne) or (not gameState.whiteToMove and playerTwo)
                             drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
                         # Start a new 2 player game 
@@ -99,6 +101,7 @@ def main():
                             gameOver = False
                             playerOne = True
                             playerTwo = True
+                            p1Time = p2Time = 1800
                             humanTurn = (gameState.whiteToMove and playerOne) or (not gameState.whiteToMove and playerTwo)
                             drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
                         # Start a new none player game 
@@ -109,6 +112,7 @@ def main():
                             gameOver = False
                             playerOne = False
                             playerTwo = False
+                            p1Time = p2Time = 1800
                             drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
                         # Undo
                         if 417 <= location[1] < 471 and not gameOver:
@@ -127,6 +131,7 @@ def main():
                             validMoves = gameState.getValidMoves()  # Get all the valid move
                             moveMade = False    # Moving a piece
                             gameOver = False
+                            p1Time = p2Time = 1800
                             drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
                     # Mouse in board and it's human turn
                     if MENU + BORDER <= location[0] < MENU + BORDER + BOARD \
@@ -179,6 +184,32 @@ def main():
             moveMade = False
 
         drawGameState(screen, gameState, gameState.getValidMoves(), sqSelected)
+        
+        if not gameState.promotionDone:
+            if motlan:
+                gameState.whiteToMove = not gameState.whiteToMove
+                motlan = False
+            board = p.transform.scale(p.image.load("chessv2/pawnPromotion.png"), (WIDTH, HEIGHT))
+            screen.blit(board, (0, 0))
+            for e in p.event.get():
+                if e.type == p.MOUSEBUTTONDOWN:
+                    location = p.mouse.get_pos()
+                    x = location[0] 
+                    y = location[1]
+                    if 285 <= y < 427:
+                        if 242<=x<327:
+                            gameState.pawnPromotion('B')
+                            motlan = True
+                        if 481<=x<574:
+                            gameState.pawnPromotion('N')
+                            motlan = True
+                        if 629<=x<730:
+                            gameState.pawnPromotion('Q')
+                            motlan = True
+                        if 795<=x<881:
+                            gameState.pawnPromotion('R')
+                            motlan = True
+                
 
         if gameState.checkmate:
             gameOver = True
@@ -186,8 +217,12 @@ def main():
         elif gameState.stalemate:
             gameOver = True
             gameOverText(screen, gameState.whiteToMove)
-        remain_time = TIME_LIMIT - int(time.time() - start_time)
-        gameOver = drawTime(screen, gameState.whiteToMove, gameOver)
+        if gameState.whiteToMove:
+            p1Time -= time.time() - start_time if p1Time > 0 else 0
+        else:
+            p2Time -= time.time() - start_time if p2Time > 0 else 0
+        # remain_time = TIME_LIMIT - int(time.time() - start_time)
+        gameOver = drawTime(screen, int(p1Time), int(p2Time), gameState.whiteToMove, gameOver)
         clock.tick(MAX_FPS)
         p.display.flip()
 
@@ -263,49 +298,50 @@ def highlightMoves(screen, gameState, validMoves, sqSelected):
                             (move.endRow + 0.5) * SQ_SIZE + BORDER + TIME), 12)
 
 
-def drawTime(screen, whiteToMove, gameOver):
-    global remain_time
-    m, s = divmod(remain_time, 60)
-    h, m = divmod(m, 60)
-    timeLeft = str(h).zfill(2) + ":" + str(m).zfill(2) + ":" + str(s).zfill(2)
+def drawTime(screen, p1time, p2time, whiteToMove, gameOver):
+    if not gameOver:
+        m1, s1 = divmod(p1time, 60)
+        h1, m1 = divmod(m1, 60)
+        timeLeftP1 = str(h1).zfill(2) + ":" + str(m1).zfill(2) + ":" + str(s1).zfill(2)
+        m2, s2 = divmod(p2time, 60)
+        h2, m2 = divmod(m2, 60)
+        timeLeftP2 = str(h2).zfill(2) + ":" + str(m2).zfill(2) + ":" + str(s2).zfill(2)
 
-    # Background color
-    White = p.Color('#D9D2D2')
-    Black = p.Color('#121212')
+        # Background color
+        White = p.Color('#D9D2D2')
+        Black = p.Color('#121212')
 
-    if remain_time <= 10:
-        color = p.Color('Red')
-    if remain_time == 0:
-        gameOver = True
-        gameOverText(screen, whiteToMove)
+        if p1time == 0 or p2time == 0:
+            gameOver = True
+            gameOverText(screen, whiteToMove)
 
-    GAME_FONT = p.font.Font('./Font/Digital Dismay.otf', 50)
+        GAME_FONT = p.font.Font('./Font/Digital Dismay.otf', 50)
 
-    # player 1 text color = black, player 2 = white
-    if whiteToMove:
-        textPlayer1 = GAME_FONT.render(timeLeft, 0, Black)
-        textPlayer2 = GAME_FONT.render('00:10:00', 0, White)
-        surfacePlayer1 = p.Surface((textPlayer1.get_width() + 20, TIME))
-        surfacePlayer1.fill(White)
-        surfacePlayer2 = p.Surface((textPlayer2.get_width() + 20, TIME))
-        surfacePlayer2.fill(Black)
-    else:
-        textPlayer2 = GAME_FONT.render(timeLeft, 0, Black)
-        textPlayer1 = GAME_FONT.render('00:10:00', 0, White)
-        surfacePlayer2 = p.Surface((textPlayer2.get_width() + 20, TIME))
-        surfacePlayer2.fill(White)
-        surfacePlayer1 = p.Surface((textPlayer1.get_width() + 20, TIME))
-        surfacePlayer1.fill(Black)
+        # player 1 text color = black, player 2 = white
+        if whiteToMove:
+            textPlayer1 = GAME_FONT.render(timeLeftP1, 0, Black)
+            textPlayer2 = GAME_FONT.render(timeLeftP2, 0, White)
+            surfacePlayer1 = p.Surface((textPlayer1.get_width() + 20, TIME))
+            surfacePlayer1.fill(White)
+            surfacePlayer2 = p.Surface((textPlayer2.get_width() + 20, TIME))
+            surfacePlayer2.fill(Black)
+        else:
+            textPlayer2 = GAME_FONT.render(timeLeftP2, 0, Black)
+            textPlayer1 = GAME_FONT.render(timeLeftP1, 0, White)
+            surfacePlayer2 = p.Surface((textPlayer2.get_width() + 20, TIME))
+            surfacePlayer2.fill(White)
+            surfacePlayer1 = p.Surface((textPlayer1.get_width() + 20, TIME))
+            surfacePlayer1.fill(Black)
 
-    textPlayer1Location = p.Rect(SQ_SIZE + BORDER + MENU, SQ_SIZE * 8 + TIME + BORDER * 2, 60, 60)
-    textPlayer2Location = p.Rect(SQ_SIZE + BORDER + MENU, 0, 60, 60)
-    backgroundPlayer1Location = p.Rect(SQ_SIZE + BORDER - 10 + MENU, SQ_SIZE * 8 + TIME + BORDER * 2, 60, 60)
-    backgroundPlayer2Location = p.Rect(SQ_SIZE + BORDER - 10 + MENU, 0, 60, 60)
+        textPlayer1Location = p.Rect(SQ_SIZE + BORDER + MENU, SQ_SIZE * 8 + TIME + BORDER * 2, 60, 60)
+        textPlayer2Location = p.Rect(SQ_SIZE + BORDER + MENU, 0, 60, 60)
+        backgroundPlayer1Location = p.Rect(SQ_SIZE + BORDER - 10 + MENU, SQ_SIZE * 8 + TIME + BORDER * 2, 60, 60)
+        backgroundPlayer2Location = p.Rect(SQ_SIZE + BORDER - 10 + MENU, 0, 60, 60)
 
-    screen.blit(surfacePlayer1, backgroundPlayer1Location)
-    screen.blit(surfacePlayer2, backgroundPlayer2Location)
-    screen.blit(textPlayer1, textPlayer1Location)
-    screen.blit(textPlayer2, textPlayer2Location)
+        screen.blit(surfacePlayer1, backgroundPlayer1Location)
+        screen.blit(surfacePlayer2, backgroundPlayer2Location)
+        screen.blit(textPlayer1, textPlayer1Location)
+        screen.blit(textPlayer2, textPlayer2Location)
     return gameOver
 
 
@@ -326,7 +362,7 @@ def drawMoveLog(screen, gs):
     moveLog = gs.moveLog
     moveTexts = []
     for i in range(0, len(moveLog), 2):
-        moveString = str(i // 2 + 1) + "." + moveLog[i].getChessNotation() + ", "
+        moveString = str(i // 2 + 1) + "." + moveLog[i].getChessNotation()
         if i + 1 < len(moveLog):
             moveString += moveLog[i + 1].getChessNotation() + "   "
         moveTexts.append(moveString)

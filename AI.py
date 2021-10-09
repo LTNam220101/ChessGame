@@ -1,8 +1,8 @@
 import random
 
 piecesScore = {
-    "K": 0, "Q": 50, "R": 30,
-    "B": 20, "N": 10, "p": 1
+    "K": 0, "Q": 9, "R": 5,
+    "B": 3, "N": 3, "p": 1
 }
 CHECKMATE = 100
 STALEMATE = -100
@@ -39,10 +39,10 @@ def findBestMove(gs, validMoves):
         gs.undoMove()
     return bestPlayerMove
 
-def findBestMoveMinMax(gs, valiMoves):
+def findBestMoveMinMax(gs, validMoves):
     global nextMove
     nextMove = None
-    findMoveMinMax(gs, valiMoves, DEPTH, gs.whiteToMove)
+    findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
     return nextMove
 
 
