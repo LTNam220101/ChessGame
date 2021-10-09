@@ -196,6 +196,7 @@ class GameState:
     '''
 
     def squareUnderAttack(self, r, c):
+        print(123)
         self.whiteToMove = not self.whiteToMove
         oppMoves = self.getAllPossibleMoves()
         self.whiteToMove = not self.whiteToMove

@@ -1,7 +1,7 @@
 import random
 
 piecesScore = {
-    "K": 100, "Q": 50, "R": 30,
+    "K": 0, "Q": 50, "R": 30,
     "B": 20, "N": 10, "p": 1
 }
 CHECKMATE = 100
