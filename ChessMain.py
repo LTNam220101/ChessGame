@@ -172,7 +172,7 @@ def main():
                     moveMade = True
                     gameOver = False
         # AI turn
-        if not gameOver and not humanTurn:
+        if not gameOver and not humanTurn and motlan:
             move = AI.findBestMoveMinMax(gameState, validMoves)
             if move is None:
                 move = AI.findRandomMove(validMoves)
