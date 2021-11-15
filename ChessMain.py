@@ -1,7 +1,7 @@
 import pygame as p
 import ChessEngine
+import ChessAI
 import time
-import AI
 
 TIME = 48
 BORDER = 32
@@ -14,7 +14,6 @@ DIMENSION = 8
 SQ_SIZE = (HEIGHT - 2 * BORDER - 2 * TIME) // DIMENSION
 MAX_FPS = 15
 IMAGES = {}
-
 
 def main():
     p.init()
@@ -33,7 +32,7 @@ def main():
                 menuGame = False
             if e.type == p.MOUSEBUTTONDOWN:
                 location = p.mouse.get_pos()  # (x, y) location of mouse
-                print(location)
+                # print(location)
                 if 540 <= location[1] < 590:
                     # One Player
                     if 300 <= location[0] < 450:
@@ -44,7 +43,7 @@ def main():
                         playerOne = True
                         playerTwo = True
                     # None Player
-                    elif 728 <= location[0] < 880:
+                    elif 750 <= location[0] < 900:
                         playerOne = False
                         playerTwo = False
                     isPlaying = True    # Game start
@@ -171,11 +170,11 @@ def main():
                         gameState.undoMove()
                     moveMade = True
                     gameOver = False
-        # AI turn
+        # ChessAI turn
         if not gameOver and not humanTurn and motlan:
-            move = AI.findBestMoveMinMax(gameState, validMoves)
+            move = ChessAI.findBestMoveMinMax(gameState, validMoves)
             if move is None:
-                move = AI.findRandomMove(validMoves)
+                move = ChessAI.findRandomMove(validMoves)
             gameState.makeMove(move)
             moveMade = True
 
@@ -196,17 +195,17 @@ def main():
                     location = p.mouse.get_pos()
                     x = location[0] 
                     y = location[1]
-                    if 285 <= y < 427:
-                        if 242<=x<327:
+                    if 310 <= y < 396:
+                        if 217<=x<298:
                             gameState.pawnPromotion('B')
                             motlan = True
-                        if 481<=x<574:
+                        if 350<=x<427:
                             gameState.pawnPromotion('N')
                             motlan = True
-                        if 629<=x<730:
+                        if 488<=x<583:
                             gameState.pawnPromotion('Q')
                             motlan = True
-                        if 795<=x<881:
+                        if 631<=x<707:
                             gameState.pawnPromotion('R')
                             motlan = True
                 

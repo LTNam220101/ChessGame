@@ -2,6 +2,7 @@ import pygame as p
 
 class GameState:
     def __init__(self):
+        
         self.board = [
             ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
             ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
@@ -11,6 +12,7 @@ class GameState:
             ['--', '--', '--', '--', '--', '--', '--', '--'],
             ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
             ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
+        
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                               'B': self.getBishopMoves, 'K': self.getKingMoves, 'Q': self.getQueenMoves}
         self.whiteToMove = True     # White turn or not
@@ -28,7 +30,6 @@ class GameState:
                                              self.currentCastlingRight.wqs, self.currentCastlingRight.bqs)]
         self.checkmate = False
         self.stalemate = False
-
 
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = '--'
@@ -68,7 +69,7 @@ class GameState:
         self.enPassantPossibleLog.append(self.enPassantPossible)
 
         # update castling rights when a rook/ a king move
-        self.updateCastleRight(move)
+        self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
                                                  self.currentCastlingRight.wqs, self.currentCastlingRight.bqs))
 
@@ -103,7 +104,7 @@ class GameState:
             self.checkmate = False
             self.stalemate = False
 
-    def updateCastleRight(self, move):
+    def updateCastleRights(self, move):
         if move.pieceMoved == 'wK':
             self.currentCastlingRight.wks = False
             self.currentCastlingRight.wqs = False
@@ -122,6 +123,18 @@ class GameState:
                     self.currentCastlingRight.bqs = False
                 elif move.startCol == 7:  # right rook
                     self.currentCastlingRight.bks = False
+        elif move.pieceMoved[0] == 'w' and move.endRow == 0:
+            if move.endCol == 0:
+                self.currentCastlingRight.bqs = False
+            elif move.endCol == 7:
+                self.currentCastlingRight.bks = False
+        elif move.pieceMoved[0] == 'b' and move.endRow == 7:
+            if move.endCol == 7:
+                self.currentCastlingRight.wqs = False
+            elif move.endCol == 0:
+                self.currentCastlingRight.wks = False
+
+
 
     '''
     All moves considering checks
