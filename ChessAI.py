@@ -160,8 +160,6 @@ def scoreBoard(gs):
                 score -= piecesScore[square[1]]
     return score
 
-
-
 '''
 Score the board base on material
 '''
